@@ -24,12 +24,7 @@ As the Orchestrator, you maintain high-level oversight without getting bogged do
 
 ### Agent Types
 1. **Project Manager**: Quality-focused team coordination
-2. **Developer**: Implementation and technical decisions
-3. **QA Engineer**: Testing and verification
-4. **DevOps**: Infrastructure and deployment
-5. **Code Reviewer**: Security and best practices
-6. **Researcher**: Technology evaluation
-7. **Documentation Writer**: Technical documentation
+2. All other SuperClaude personas
 
 ## 🔐 Git Discipline - MANDATORY FOR ALL AGENTS
 
@@ -37,38 +32,64 @@ As the Orchestrator, you maintain high-level oversight without getting bogged do
 
 **CRITICAL**: Every agent MUST follow these git practices to prevent work loss:
 
-1. **Auto-Commit Every 30 Minutes**
+1. **Always keep track of which step of the TDD process you are in**
+
+Use TDD and make the process explicit in Git and Github. Note: by "naive" I mean returning exactly what the test will verify, with no actual business logic involved.
+
+For a new feature, describe it in detail, and create an issue in Github. Use the Github MCP or the `gh` command-line tool. Use the 💡 emoji: `💡 [taskId] [task summary]` 
+Then, start the TDD method. Once a new test is written and it's failing, create a new commit. The commit message would be `🧪 [taskId] [task summary]`.
+Once the test is passed, create a new commit. If it's a naive (stubbed) implementation, the commit message would be `🍬 [taskId] [task summary]`. Otherwise, use `✅ [taskId] [task summary]`.
+Later, if the code needs refactoring, create a new commit: `🚧 [taskId] [task summary]`.
+When the task is completed, update the project's journal file with the progress made in the task, and create a new commit `📝 [taskId] [task summary]`. Afterwards, update the overall documentation of the project and commit the changes with `🏅 [taskId] [task summary]`
+
+Also important: add a link to the Github issue url in the footer of the commit message.
+
+In summary,
+
+| Emoji | Meaning                | When to Use                                                                               |
+| 💡    | Idea defined / planned | After an issue or task has been defined                                                   |
+| 🧪    | A new failing test     | After test is added                                                                       |
+| 🍬    | Naive implementation   | When test passes trivially                                                                |
+| 🚧    | Working implementation | When test passes with real logic                                                          |
+| 🚀    | Refactor               | Improving code after green                                                                |
+| 📝    | Journal updated        | When the task is complete, and the journal has been updated                               |
+| 🏅    | Task documented        | After the journal and the documentation have been updated, so the task has been completed |
+
+2. **Auto-Commit Every 30 Minutes**
+Use the emoji used in the last commit.
    ```bash
    # Set a timer/reminder to commit regularly
    git add -A
-   git commit -m "Progress: [specific description of what was done]"
+   git commit -m "[emoji] [taskId] WIP: [specific description of what was done]"
    ```
 
-2. **Commit Before Task Switches**
+3. **Commit Before Task Switches**
    - ALWAYS commit current work before starting a new task
    - Never leave uncommitted changes when switching context
+   - Use the emoji used in the last commit.
    - Tag working versions before major changes
 
-3. **Feature Branch Workflow**
+4. **Feature Branch Workflow**
+   - Create a new issue in github.
    ```bash
    # Before starting any new feature/task
-   git checkout -b feature/[descriptive-name]
+   git checkout -b feature/[taskId]-[task summary]
    
    # After completing feature
    git add -A
-   git commit -m "Complete: [feature description]"
-   git tag stable-[feature]-$(date +%Y%m%d-%H%M%S)
+   git commit -m "💡 [taskId] [task summary]"
+   git tag [taskId]-$(date +%Y%m%d-%H%M%S)
    ```
 
-4. **Meaningful Commit Messages**
+5. **Meaningful Commit Messages**
    - Bad: "fixes", "updates", "changes"
    - Good: "Add user authentication endpoints with JWT tokens"
    - Good: "Fix null pointer in payment processing module"
    - Good: "Refactor database queries for 40% performance gain"
 
-5. **Never Work >1 Hour Without Committing**
+6. **Never Work >1 Hour Without Committing**
    - If you've been working for an hour, stop and commit
-   - Even if the feature isn't complete, commit as "WIP: [description]"
+   - Even if the feature isn't complete, commit as "[emoji] [taskId] WIP: [description of what was done]"
    - This ensures work is never lost due to crashes or errors
 
 ### Git Emergency Recovery
@@ -141,19 +162,14 @@ tmux rename-window -t glacier-backend:3 "Uvicorn-API"
 Follow this systematic sequence to start any project:
 
 #### 1. Find the Project
-```bash
-# List all directories in ~/Coding to find projects
-ls -la ~/Coding/ | grep "^d" | awk '{print $NF}' | grep -v "^\."
+There should be two environment variables defined: `ROOT_FOLDER` and `TMUX_ORCHESTRATOR_FOLDER`. If they are not, read the `.env` file in the current folder. The `ROOT_FOLDER` variable will contain the root folder. Projects are subfolders of it. `TMUX_ORCHESTRATOR_FOLDER` pointing to a clone of this repository. If they are not defined, ask the user what their values are.
 
-# If project name is ambiguous, list matches
-ls -la ~/Coding/ | grep -i "task"  # for "task templates"
-```
 
 #### 2. Create Tmux Session
 ```bash
 # Create session with project name (use hyphens for spaces)
-PROJECT_NAME="task-templates"  # or whatever the folder is called
-PROJECT_PATH="/Users/jasonedward/Coding/$PROJECT_NAME"
+PROJECT_NAME="[subfolder name]"
+PROJECT_PATH="$ROOT_FOLDER/$PROJECT_NAME"
 tmux new-session -d -s $PROJECT_NAME -c "$PROJECT_PATH"
 ```
 
@@ -195,6 +211,9 @@ tmux send-keys -t $PROJECT_NAME:0 Enter
 #### 5. Project Type Detection (Agent Should Do This)
 The agent should check for:
 ```bash
+# Java project
+test -f pom.xml
+
 # Node.js project
 test -f package.json && cat package.json | grep scripts
 
@@ -211,6 +230,9 @@ test -f go.mod
 #### 6. Start Development Server (Agent Should Do This)
 Based on project type, the agent should start the appropriate server in window 2:
 ```bash
+# Java project
+tmux send-keys -t $PROJECT_NAME:2 "mvn springboot:run"
+
 # For Next.js/Node projects
 tmux send-keys -t $PROJECT_NAME:2 "npm install && npm run dev" Enter
 
@@ -249,16 +271,16 @@ tmux capture-pane -t $PROJECT_NAME:2 -p | grep -i error
 ### Example: Starting "Task Templates" Project
 ```bash
 # 1. Find project
-ls -la ~/Coding/ | grep -i task
+TASK_TEMPLATES=$(ls -la $ROOT_FOLDER | grep -i task)
 # Found: task-templates
 
 # 2. Create session
-tmux new-session -d -s task-templates -c "/Users/jasonedward/Coding/task-templates"
+tmux new-session -d -s task-templates -c "$TASK_TEMPLATES"
 
 # 3. Set up windows
 tmux rename-window -t task-templates:0 "Claude-Agent"
-tmux new-window -t task-templates -n "Shell" -c "/Users/jasonedward/Coding/task-templates"
-tmux new-window -t task-templates -n "Dev-Server" -c "/Users/jasonedward/Coding/task-templates"
+tmux new-window -t task-templates -n "Shell" -c "$TASK_TEMPLATES"
+tmux new-window -t task-templates -n "Dev-Server" -c "$TASK_TEMPLATES"
 
 # 4. Start Claude and brief
 tmux send-keys -t task-templates:0 "claude" Enter
@@ -314,6 +336,7 @@ Key Principles:
 - Ensure code follows best practices
 - Track technical debt
 - Communicate clearly and constructively
+- Ensure the journal and documentation are up to date
 
 First, analyze the project and existing team members, then introduce yourself to the developer in window 0."
 sleep 1
@@ -379,19 +402,21 @@ Priority: HIGH/MED/LOW
 #### 1. Project Analysis
 ```bash
 # Find project
-ls -la ~/Coding/ | grep -i "[project-name]"
+ls -la $ROOT_PROJECT | grep -i "[project-name]"
 
 # Analyze project type
-cd ~/Coding/[project-name]
+cd $ROOT_PROJECT/[project-name]
+test -f pom.xml && echo "Java project"
 test -f package.json && echo "Node.js project"
 test -f requirements.txt && echo "Python project"
 ```
 
 #### 2. Propose Team Structure
 
-**Small Project**: 1 Developer + 1 PM
-**Medium Project**: 2 Developers + 1 PM + 1 QA  
-**Large Project**: Lead + 2 Devs + PM + QA + DevOps
+**Small Project (w/o UI)**: 1 architect + 1 backend + 1 PM + 1 Security + 1 Scribe
+**Small Project (with UI)**: 1 architect + 1 frontend + 1 backend + 1 PM + 1 Security + 1 Scribe
+**Medium Project**: 1 architect + 1 frontend + 1 backend + 1 PM + 1 QA + 1 Security + 1 Scribe
+**Large Project**: 1 architect + 1 frontend + 2 backend + 1 PM + 1 QA + 1 DevOps + 1 Security + 1 Scribe
 
 #### 3. Deploy Team
 Create session and deploy all agents with specific briefings for their roles.
@@ -409,7 +434,7 @@ tmux new-window -t [session] -n "TEMP-CodeReview"
 ```bash
 # 1. Capture complete conversation
 tmux capture-pane -t [session]:[window] -S - -E - > \
-  ~/Coding/Tmux\ orchestrator/registry/logs/[session]_[role]_$(date +%Y%m%d_%H%M%S).log
+  $TMUX_ORCHESTRATOR_FOLDER/registry/logs/[session]_[role]_$(date +%Y%m%d_%H%M%S).log
 
 # 2. Create summary of work completed
 echo "=== Agent Summary ===" >> [logfile]
@@ -423,7 +448,7 @@ tmux kill-window -t [session]:[window]
 
 ### Agent Logging Structure
 ```
-~/Coding/Tmux orchestrator/registry/
+$TMUX_ORCHESTRATOR_FOLDER/registry/
 ├── logs/            # Agent conversation logs
 ├── sessions.json    # Active session tracking
 └── notes/           # Orchestrator notes and summaries
@@ -432,11 +457,13 @@ tmux kill-window -t [session]:[window]
 ## Quality Assurance Protocols
 
 ### PM Verification Checklist
-- [ ] All code has tests
+- [ ] TDD-emoji commits
+- [ ] OK from the QA agent
+- [ ] OK from the Architect agent
 - [ ] Error handling is comprehensive
-- [ ] Performance is acceptable
-- [ ] Security best practices followed
-- [ ] Documentation is updated
+- [ ] OK from the Performance agent
+- [ ] OK from the Security agent
+- [ ] OK from the Scribe agent
 - [ ] No technical debt introduced
 
 ### Continuous Verification
@@ -592,7 +619,8 @@ tmux send-keys -t session:descriptive-name "pwd" Enter
 sleep 1
 tmux capture-pane -t session:descriptive-name -p | tail -3
 
-# 3. Activate virtual environment if needed
+# 3. Activate nix flake / virtual environment if needed
+tmux send-keys -t session:descriptive-name "nix develop ." Enter
 tmux send-keys -t session:descriptive-name "source venv/bin/activate" Enter
 
 # 4. Run your command
@@ -622,20 +650,20 @@ When a command fails:
 #### Using send-claude-message.sh
 ```bash
 # Basic usage - ALWAYS use this instead of manual tmux commands
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh <target> "message"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh <target> "message"
 
 # Examples:
 # Send to a window
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh agentic-seek:3 "Hello Claude!"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh agentic-seek:3 "Hello Claude!"
 
 # Send to a specific pane in split-screen
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh tmux-orc:0.1 "Message to pane 1"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh tmux-orc:0.1 "Message to pane 1"
 
 # Send complex instructions
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh glacier-backend:0 "Please check the database schema for the campaigns table and verify all columns are present"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh glacier-backend:0 "Please check the database schema for the campaigns table and verify all columns are present"
 
 # Send status update requests
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh ai-chat:2 "STATUS UPDATE: What's your current progress on the authentication implementation?"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh ai-chat:2 "STATUS UPDATE: What's your current progress on the authentication implementation?"
 ```
 
 #### Why Use the Script?
@@ -646,7 +674,7 @@ When a command fails:
 5. **Consistent messaging**: All agents receive messages the same way
 
 #### Script Location and Usage
-- **Location**: `/Users/jasonedward/Coding/Tmux orchestrator/send-claude-message.sh`
+- **Location**: `$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh`
 - **Permissions**: Already executable, ready to use
 - **Arguments**: 
   - First: target (session:window or session:window.pane)
@@ -661,34 +689,34 @@ tmux send-keys -t project:0 "claude" Enter
 sleep 5
 
 # Then use the script for the briefing
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh project:0 "You are responsible for the frontend codebase. Please start by analyzing the current project structure and identifying any immediate issues."
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh project:0 "You are responsible for the frontend codebase. Please start by analyzing the current project structure and identifying any immediate issues."
 ```
 
 ##### 2. Cross-Agent Coordination
 ```bash
 # Ask frontend agent about API usage
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh frontend:0 "Which API endpoints are you currently using from the backend?"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh frontend:0 "Which API endpoints are you currently using from the backend?"
 
 # Share info with backend agent
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh backend:0 "Frontend is using /api/v1/campaigns and /api/v1/flows endpoints"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh backend:0 "Frontend is using /api/v1/campaigns and /api/v1/flows endpoints"
 ```
 
 ##### 3. Status Checks
 ```bash
 # Quick status request
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh session:0 "Quick status update please"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh session:0 "Quick status update please"
 
 # Detailed status request
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh session:0 "STATUS UPDATE: Please provide: 1) Completed tasks, 2) Current work, 3) Any blockers"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh session:0 "STATUS UPDATE: Please provide: 1) Completed tasks, 2) Current work, 3) Any blockers"
 ```
 
 ##### 4. Providing Assistance
 ```bash
 # Share error information
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh session:0 "I see in your server window that port 3000 is already in use. Try port 3001 instead."
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh session:0 "I see in your server window that port 3000 is already in use. Try port 3001 instead."
 
 # Guide stuck agents
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh session:0 "The error you're seeing is because the virtual environment isn't activated. Run 'source venv/bin/activate' first."
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh session:0 "The error you're seeing is because the virtual environment isn't activated. Run 'source venv/bin/activate' first."
 ```
 
 #### OLD METHOD (DO NOT USE)
@@ -699,14 +727,14 @@ sleep 1
 tmux send-keys -t session:window Enter
 
 # ✅ DO THIS INSTEAD:
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh session:window "message"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh session:window "message"
 ```
 
 #### Checking for Responses
 After sending a message, check for the response:
 ```bash
 # Send message
-/Users/jasonedward/Coding/Tmux\ orchestrator/send-claude-message.sh session:0 "What's your status?"
+$TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh session:0 "What's your status?"
 
 # Wait a bit for response
 sleep 5
