@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Send message to Claude agent in tmux window
 # Usage: send-claude-message.sh <session:window> <message>
@@ -10,7 +10,7 @@ if [ $# -lt 2 ]; then
 fi
 
 WINDOW="$1"
-shift  # Remove first argument, rest is the message
+shift # Remove first argument, rest is the message
 MESSAGE="$*"
 
 # Send the message

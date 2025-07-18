@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Dynamic scheduler with note for next check
 # Usage: ./schedule_with_note.sh <minutes> "<note>" [target_window]
 

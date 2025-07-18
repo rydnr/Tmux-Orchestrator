@@ -55,7 +55,7 @@ In summary,
 | 📝    | Journal updated        | When the task is complete, and the journal has been updated                               |
 | 🏅    | Task documented        | After the journal and the documentation have been updated, so the task has been completed |
 
-2. **Auto-Commit Every 30 Minutes**
+2. **Auto-Commit Every 10 Minutes**
 Use the emoji used in the last commit.
    ```bash
    # Set a timer/reminder to commit regularly
@@ -66,7 +66,7 @@ Use the emoji used in the last commit.
 3. **Commit Before Task Switches**
    - ALWAYS commit current work before starting a new task
    - Never leave uncommitted changes when switching context
-   - Use the emoji used in the last commit.
+   - Use the emoji used in the last commit
    - Tag working versions before major changes
 
 4. **Feature Branch Workflow**
@@ -111,10 +111,14 @@ git stash pop  # Restore stashed changes if needed
 ### Project Manager Git Responsibilities
 
 Project Managers must enforce git discipline:
-- Remind engineers to commit every 30 minutes
-- Verify feature branches are created for new work
-- Ensure meaningful commit messages
-- Check that stable tags are created
+- Make sure for each milestone in `roadmap/[milestone].md` there is a number of tasks under the `roadmap/[milestone]/` folder. Each task should be defined as a Github issue, and documented in `roadmap/[milestone]/[githubIssueId]-[task summary].md`
+- Engineers can work on different tasks, but it's recommended to focus on one task at a time. They must not work on different milestones at the same time.
+- Remind engineers to commit every 10 minutes.
+- Verify feature branches are created for new work.
+- Ensure meaningful commit messages.
+- Check that stable tags are created.
+- Ensure branches are merged into the `main` branch when the task is completed, and deleted afterwards. Also, make sure to push the `main` branch and tags.
+- Make sure agents understand that the project might consist of different git repositories (as git submodules or otherwise).
 
 ### Why This Matters
 
@@ -188,7 +192,7 @@ tmux new-window -t $PROJECT_NAME -n "Dev-Server" -c "$PROJECT_PATH"
 #### 4. Brief the Claude Agent
 ```bash
 # Send briefing message to Claude agent
-tmux send-keys -t $PROJECT_NAME:0 "claude" Enter
+tmux send-keys -t $PROJECT_NAME:0 "~/bin/claude" Enter
 sleep 5  # Wait for Claude to start
 
 # Send the briefing
@@ -283,7 +287,7 @@ tmux new-window -t task-templates -n "Shell" -c "$TASK_TEMPLATES"
 tmux new-window -t task-templates -n "Dev-Server" -c "$TASK_TEMPLATES"
 
 # 4. Start Claude and brief
-tmux send-keys -t task-templates:0 "claude" Enter
+tmux send-keys -t task-templates:0 "~/bin/claude" Enter
 # ... (briefing as above)
 ```
 
@@ -318,7 +322,7 @@ tmux new-window -t [session] -n "Project-Manager" -c "$PROJECT_PATH"
 #### 3. Start and Brief the PM
 ```bash
 # Start Claude
-tmux send-keys -t [session]:[PM-window] "claude" Enter
+tmux send-keys -t [session]:[PM-window] "~/bin/claude" Enter
 sleep 5
 
 # Send PM-specific briefing
@@ -328,6 +332,7 @@ tmux send-keys -t [session]:[PM-window] "You are the Project Manager for this pr
 2. **Verification**: Test everything. Trust but verify all work.
 3. **Team Coordination**: Manage communication between team members efficiently.
 4. **Progress Tracking**: Monitor velocity, identify blockers, report to orchestrator.
+5. **Continuous Integration**: Make sure all agents commit regularly.
 5. **Risk Management**: Identify potential issues before they become problems.
 
 Key Principles:
@@ -518,10 +523,10 @@ The `schedule_with_note.sh` script MUST:
 ```bash
 # Always use current window for self-scheduling
 CURRENT_WINDOW=$(tmux display-message -p "#{session_name}:#{window_index}")
-./schedule_with_note.sh 15 "Regular PM oversight check" "$CURRENT_WINDOW"
+./schedule_with_note.sh 10 "Regular PM oversight check" "$CURRENT_WINDOW"
 
 # For scheduling other agents, specify their windows explicitly
-./schedule_with_note.sh 30 "Developer progress check" "ai-chat:2"
+./schedule_with_note.sh 20 "Developer progress check" "ai-chat:2"
 ```
 
 ## Anti-Patterns to Avoid
@@ -684,9 +689,16 @@ $TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh ai-chat:2 "STATUS UPDATE: What'
 
 ##### 1. Starting Claude and Initial Briefing
 ```bash
-# Start Claude first
-tmux send-keys -t project:0 "claude" Enter
+# Add MCP settings
+tmux send-keys -t project:0 "~/bin/claude mcp add playwright -- npx -y @browsermcp/mcp@latest" Enter
+tmux send-keys -t project:0 "~/bin/claude mcp add browser -- npx -y @agent-infra/mcp-server-browser@latest" Enter
+tmux send-keys -t project:0 "~/bin/claude mcp add --transport sse context7 https://mcp.context7.com/sse" Enter
+tmux send-keys -t project:0 "~/bin/claude mcp add seq -- npx @modelcontextprotocol/server-sequential-thinking" Enter
+tmux send-keys -t project:0 "~/bin/claude mcp add time -- uvx MCP-timeserver" Enter
+#tmux send-keys -t project:0 "~/bin/claude mcp add " Enter
 sleep 5
+# Start Claude first
+tmux send-keys -t project:0 "~/bin/claude" Enter
 
 # Then use the script for the briefing
 $TMUX_ORCHESTRATOR_FOLDER/send-claude-message.sh project:0 "You are responsible for the frontend codebase. Please start by analyzing the current project structure and identifying any immediate issues."
